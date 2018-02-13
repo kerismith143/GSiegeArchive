@@ -12,7 +12,7 @@
 struct send_que
 {
 	HWND hWnd;
-	char Text[SKCHARMAX+1];
+	char Text[SKCHARMAX+3]; // Handle leading and trailing 0x0A
 	struct send_que *NextEntry;
 };
 

@@ -2,8 +2,8 @@
 #define __GSIEGE_INCLUDES_HEADER__
 
 #define GSIEGE_MAJOR_VERSION	1
-#define GSIEGE_MINOR_VERSION	1
-#define GSIEGE_VERSION_STRING	"GSiege v1.1"
+#define GSIEGE_MINOR_VERSION	2
+#define GSIEGE_VERSION_STRING	"GSiege v1.2"
 
 // Hopefully, I know what I am doing. >:)
 #ifdef _MSC_VER

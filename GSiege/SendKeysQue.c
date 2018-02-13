@@ -165,7 +165,7 @@ int SendKeysQueAdd(HWND hWnd, char *text)
 DWORD SendKeysQue()
 {
 	HWND hWnd = 0;
-	char text[SKCHARMAX+3]; // Handle leading and trailing \n
+	char text[SKCHARMAX+3]; // Handle leading and trailing 0x0A
 	size_t len;
 	int nRet;
 	DWORD dwDuration;
