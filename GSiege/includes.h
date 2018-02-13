@@ -1,10 +1,6 @@
 #ifndef __GSIEGE_INCLUDES_HEADER__
 #define __GSIEGE_INCLUDES_HEADER__
 
-#define GSIEGE_MAJOR_VERSION	1
-#define GSIEGE_MINOR_VERSION	2
-#define GSIEGE_VERSION_STRING	"GSiege v1.2"
-
 // Hopefully, I know what I am doing. >:)
 #ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS // Disable warning for using non-secure versions of C functions in Visual Studio

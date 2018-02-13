@@ -2,7 +2,6 @@
 #define __GSIEGE_CATAPULT_HEADER__
 
 // Catapult precision range levels for Scrollbar
-#define CATMINRNG	0
 #define CATMAXRNG	380
 
 int CatapultFormBuilder(); // Build Catapult tab

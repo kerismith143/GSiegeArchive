@@ -24,6 +24,7 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	GlobalSettings.hBoldFont = CreateFont(11,6,0,0,FW_BOLD,0,0,0,0,0,0,0,0,TEXT("Tahoma"));
 
 	// Build windows
+	LoadSettings();
 	MainWindowClassBuilder();
 	TabWindowClassBuilder();
 	FlameRamFormBuilder();

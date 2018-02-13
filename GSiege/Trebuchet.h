@@ -2,8 +2,7 @@
 #define __GSIEGE_TREBUCHET_HEADER__
 
 // Range definitions for Trebuchet
-#define TREBMINRNG	0
-#define TREBMAXRNG	780
+#define TREBMAXRNG	790
 
 int TrebuchetFormBuilder(); // Create and register trebuchet elements
 int TrebuchetShowElements(); // Show all trebuchet elements

@@ -3,7 +3,7 @@
 char *lpszTabNames[] = {
 	"Flame Ram",
 	"Catapult",
-	"Treb/Mortar"
+	"Trebuchet"
 };
 
 void SetStartStop(int nStartStop)
@@ -14,9 +14,9 @@ void SetStartStop(int nStartStop)
 		strcpy(buffer, "Stop");
 	else
 		strcpy(buffer, "Start");
-	SendMessage(g_hRamStartButton, WM_SETTEXT, 0, (LPARAM)buffer);
-	SendMessage(g_hCatStartButton, WM_SETTEXT, 0, (LPARAM)buffer);
-	SendMessage(g_hTrebStartButton, WM_SETTEXT, 0, (LPARAM)buffer);
+	SendMessage(GlobalSettings.hRamStartButton, WM_SETTEXT, 0, (LPARAM)buffer);
+	SendMessage(GlobalSettings.hCatStartButton, WM_SETTEXT, 0, (LPARAM)buffer);
+	SendMessage(GlobalSettings.hTrebStartButton, WM_SETTEXT, 0, (LPARAM)buffer);
 }
 
 int GetStartStop()
@@ -24,7 +24,7 @@ int GetStartStop()
 	char buffer[32];
 
 	memset(buffer, 0, sizeof(buffer));
-	SendMessage(g_hRamStartButton, WM_GETTEXT, 0, (LPARAM)buffer);
+	SendMessage(GlobalSettings.hRamStartButton, WM_GETTEXT, 0, (LPARAM)buffer);
 	if ( !strcmp(buffer, "Stop") )
 		return 0;
 	return 1;

@@ -18,6 +18,18 @@ void SetWindowTopmost()
 
 void SetWindowState()
 {
+	if ( UserSettings.EnableAdv ) ShowWindow(GlobalSettings.hOffset, TRUE);
+	else ShowWindow(GlobalSettings.hOffset, FALSE);
+	if ( UserSettings.EnableAdv ) ShowWindow(GlobalSettings.hOffsetStatic, TRUE);
+	else ShowWindow(GlobalSettings.hOffsetStatic, FALSE);
+
+	if ( GlobalSettings.SelectedTab == GlobalSettings.hSiegeTab[0] )
+		FlameRamToggleElements();
+	else if ( GlobalSettings.SelectedTab == GlobalSettings.hSiegeTab[1] )
+		CatapultToggleElements();
+	else if ( GlobalSettings.SelectedTab == GlobalSettings.hSiegeTab[2] )
+		TrebuchetToggleElements();
+
 	if ( UserSettings.EnableChat )
 	{
 		TAB_CHAT_HEIGHT = TAB_STATIC_HEIGHT;
@@ -25,7 +37,8 @@ void SetWindowState()
 		ShowWindow(GlobalSettings.hChatWindow, TRUE);
 		UpdateWindow(GlobalSettings.hChatButton);
 		UpdateWindow(GlobalSettings.hChatWindow);
-		UserSettings.MainHeight = (250 + GetSystemMetrics(SM_CYMENU)) + TAB_CHAT_HEIGHT;
+		UpdateWindow(GlobalSettings.hOffset);
+		UserSettings.MainHeight = (MAINHEIGHT + GetSystemMetrics(SM_CYMENU)) + TAB_CHAT_HEIGHT;
 		InvalidateRect(GlobalSettings.hMainWindow, NULL, FALSE);
 	}
 	else
@@ -35,7 +48,8 @@ void SetWindowState()
 		ShowWindow(GlobalSettings.hChatWindow, FALSE);
 		UpdateWindow(GlobalSettings.hChatButton);
 		UpdateWindow(GlobalSettings.hChatWindow);
-		UserSettings.MainHeight = 250 + GetSystemMetrics(SM_CYMENU);
+		UpdateWindow(GlobalSettings.hOffset);
+		UserSettings.MainHeight = MAINHEIGHT + GetSystemMetrics(SM_CYMENU);
 		InvalidateRect(GlobalSettings.hMainWindow, NULL, FALSE);
 	}
 	SetWindowTopmost();
@@ -50,6 +64,7 @@ LRESULT CALLBACK MainWindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPara
 		case WM_COMMAND:
 		{
 			ShowTab((HWND)lParam); // Set tab states
+			ModifyEdits((HWND)lParam);
 			FlameRamCheckState((HWND)lParam); // Check processing for Flame Ram tab and elements
 			CatapultCheckState((HWND)lParam); // Check processing for Catapult tab and elements
 			TrebuchetCheckState((HWND)lParam); // Check processing for Trbuchet tab and elements
@@ -65,10 +80,24 @@ LRESULT CALLBACK MainWindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPara
 			char buffer[32];
 
 			// Set global values for Scrollbar
-			if ( ((HWND)lParam) == g_hCatSliderBar )
-				nValue = UserSettings.CatRange;
-			else if ( ((HWND)lParam) == g_hTrebSliderBar )
-				nValue = UserSettings.TrebRange;
+			if ( ((HWND)lParam) == GlobalSettings.hCatSliderBar )
+			{
+				if ( UserSettings.CatRange < UserSettings.CatMin )
+					nValue = UserSettings.CatMin;
+				else if ( UserSettings.CatRange > UserSettings.CatMax )
+					nValue = UserSettings.CatMax;
+				else
+					nValue = UserSettings.CatRange;
+			}
+			else if ( ((HWND)lParam) == GlobalSettings.hTrebSliderBar )
+			{
+				if ( UserSettings.TrebRange < UserSettings.TrebMin )
+					nValue = UserSettings.TrebMin;
+				else if ( UserSettings.TrebRange > UserSettings.TrebMax )
+					nValue = UserSettings.TrebMax;
+				else
+					nValue = UserSettings.TrebRange;
+			}
 			else
 				break;
 
@@ -82,13 +111,13 @@ LRESULT CALLBACK MainWindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPara
 
 				case SB_PAGERIGHT:
 				case SB_LINERIGHT:
-					if ( ((HWND)lParam) == g_hCatSliderBar )
+					if ( ((HWND)lParam) == GlobalSettings.hCatSliderBar )
 					{
-						if ( (nValue + 1) <= CATMAXRNG ) nValue++; // Increase by 1 unit
+						if ( (nValue + 1) <= UserSettings.CatMax ) nValue++; // Increase by 1 unit
 					}
-					else if ( ((HWND)lParam) == g_hTrebSliderBar )
+					else if ( ((HWND)lParam) == GlobalSettings.hTrebSliderBar )
 					{
-						if ( (nValue + 1) <= TREBMAXRNG ) nValue++; // Increase by 1 unit
+						if ( (nValue + 1) <= UserSettings.TrebMax ) nValue++; // Increase by 1 unit
 					}
 					break;
 
@@ -106,26 +135,26 @@ LRESULT CALLBACK MainWindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPara
 			SetScrollPos((HWND)lParam, SB_CTL, nValue, TRUE);
 
 			// Set range readout for Catapult Scrollbar
-			if ( ((HWND)lParam) == g_hCatSliderBar )
+			if ( ((HWND)lParam) == GlobalSettings.hCatSliderBar )
 			{
 				UserSettings.CatRange = nValue;
 
 				memset(buffer, 0, sizeof(buffer));
 				// Calculate range to the 10ths
-				_snprintf(buffer, sizeof(buffer)-1, "Range: %.2f", (((float)UserSettings.CatRange / (float)CATMAXRNG) * 100));
-				SendMessage(g_hCatSliderValue, WM_SETTEXT, 0, (LPARAM)buffer);
+				_snprintf(buffer, sizeof(buffer)-1, "Range: %.2f", (((float)(UserSettings.CatRange - UserSettings.CatMin) / (float)(UserSettings.CatMax - UserSettings.CatMin)) * 100) );
+				SendMessage(GlobalSettings.hCatSliderValue, WM_SETTEXT, 0, (LPARAM)buffer);
 				// Set Catapult state values
 				CatapultCheckState((HWND)lParam);
 			}
 			// Set range readout for Trebuchet Scrollbar
-			else if ( ((HWND)lParam) == g_hTrebSliderBar )
+			else if ( ((HWND)lParam) == GlobalSettings.hTrebSliderBar )
 			{
 				UserSettings.TrebRange = nValue;
 
 				memset(buffer, 0, sizeof(buffer));
 				// Calculate range to the 10ths
-				_snprintf(buffer, sizeof(buffer)-1, "Range: %.2f", (((float)UserSettings.TrebRange / (float)TREBMAXRNG) * 100));
-				SendMessage(g_hTrebSliderValue, WM_SETTEXT, 0, (LPARAM)buffer);
+				_snprintf(buffer, sizeof(buffer)-1, "Range: %.2f", (((float)(UserSettings.TrebRange - UserSettings.TrebMin) / (float)(UserSettings.TrebMax - UserSettings.TrebMin)) * 100) );
+				SendMessage(GlobalSettings.hTrebSliderValue, WM_SETTEXT, 0, (LPARAM)buffer);
 				// Set Trebuchet state values
 				TrebuchetCheckState((HWND)lParam);
 			}
@@ -195,17 +224,16 @@ HWND MainWindowClassBuilder()
 	RECT rc;
 
 	// Load user settings
-	LoadSettings();
-	UserSettings.MainWidth = 300;
+	UserSettings.MainWidth = MAINWIDTH;
 	if ( UserSettings.EnableChat )
 	{
 		TAB_CHAT_HEIGHT = TAB_STATIC_HEIGHT;
-		UserSettings.MainHeight = (250 + GetSystemMetrics(SM_CYMENU)) + TAB_CHAT_HEIGHT;
+		UserSettings.MainHeight = (MAINHEIGHT + GetSystemMetrics(SM_CYMENU)) + TAB_CHAT_HEIGHT;
 	}
 	else
 	{
 		TAB_CHAT_HEIGHT = 0;
-		UserSettings.MainHeight = 250 + GetSystemMetrics(SM_CYMENU);
+		UserSettings.MainHeight = MAINHEIGHT + GetSystemMetrics(SM_CYMENU);
 	}
 
 	// Define class properties and register.

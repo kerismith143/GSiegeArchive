@@ -1,8 +1,5 @@
 #include "includes.h"
 
-#define RAMMASTER	3500 // Wait time + offset for Flame Ram with Mastery III or higher
-#define RAMNOMASTER	5500 // Wait time + offset for Flame Ram with Mastery II or lower
-#define CATTREB		5500 // Wait time + offset for Catapult and Trebuchet
 #define SKPROCESS	   3 // Amount of buffer entries to process for SendKeysQue()
 
 // Procedure to control Flame Ram bot functionality
@@ -28,7 +25,7 @@ DWORD BotRam(DWORD dwIteration)
 			}
 
 			// Pause between skills
-			dwSleep = RandOffset(100, MS_ENABLED);
+			dwSleep = RandOffset(UserSettings.Offset, MS_ENABLED);
 			dwDuration += dwSleep;
 			Sleep(dwSleep);
 
@@ -86,9 +83,13 @@ DWORD BotCT(int nType)
 			dwDuration += SendKeys(hGuildWars, '2', RandOffset(dwRange, MS_ENABLED));
 
 			// Sleep one iteration and increment tick count
-			dwSleep = RandOffset(CATTREB, MS_ENABLED);
+			if ( nType == BOT_TREBUCHET )
+				dwSleep = RandOffset(UserSettings.TrebRecharge, MS_ENABLED);
+			else if ( nType == BOT_CATAPULT )
+				dwSleep = RandOffset(UserSettings.CatRecharge, MS_ENABLED);
 			dwDuration += dwSleep;
 			n++;
+
 			// Send SKPROCESS lines of text from SendQue
 			for ( k = 0; k < SKPROCESS; k++ )
 			{
@@ -98,6 +99,7 @@ DWORD BotCT(int nType)
 					dwDuration += nRet;
 				}
 			}
+
 			// Wait for iteration
 			Sleep(dwSleep);
 		}
@@ -118,20 +120,20 @@ DWORD TimerProc(LPVOID lpParams)
 	// Execute procedure for Flame Ram with Mastery II or less
 	if ( ptpp->nType == BOT_RAM_NOMASTER )
 	{
-		dwDuration = BotRam(RAMNOMASTER);
+		dwDuration = BotRam((UserSettings.RamMastery ? UserSettings.RamMastRecharge : UserSettings.RamNoMastRecharge));
 		fDuration = (((float)dwDuration) / 1000);
 		_snprintf(buffer, sizeof(buffer)-1, "Run Time: %.2fs", fDuration);
-		SendMessage(g_hRamDurationBox, WM_SETTEXT,0,(LPARAM)buffer);
+		SendMessage(GlobalSettings.hRamDurationBox, WM_SETTEXT,0,(LPARAM)buffer);
 		SetStartStop(SHOWSTART);
 		return dwDuration;
 	}
 	// Execute procedure for Flame Ram with Mastery III or greater
 	else if ( ptpp->nType == BOT_RAM_MASTER )
 	{
-		dwDuration = BotRam(RAMMASTER);
+		dwDuration = BotRam((UserSettings.RamMastery ? UserSettings.RamMastRecharge : UserSettings.RamNoMastRecharge));
 		fDuration = (((float)dwDuration) / 1000);
 		_snprintf(buffer, sizeof(buffer)-1, "Run Time: %.2fs", fDuration);
-		SendMessage(g_hRamDurationBox, WM_SETTEXT,0,(LPARAM)buffer);
+		SendMessage(GlobalSettings.hRamDurationBox, WM_SETTEXT,0,(LPARAM)buffer);
 		SetStartStop(SHOWSTART);
 		return dwDuration;
 	}
@@ -142,9 +144,9 @@ DWORD TimerProc(LPVOID lpParams)
 		fDuration = (((float)dwDuration) / 1000);
 		_snprintf(buffer, sizeof(buffer)-1, "Run Time: %.2fs", fDuration);
 		if ( ptpp->nType == BOT_CATAPULT )
-			SendMessage(g_hCatDurationBox, WM_SETTEXT,0,(LPARAM)buffer);
+			SendMessage(GlobalSettings.hCatDurationBox, WM_SETTEXT,0,(LPARAM)buffer);
 		else
-			SendMessage(g_hTrebDurationBox, WM_SETTEXT,0,(LPARAM)buffer);
+			SendMessage(GlobalSettings.hTrebDurationBox, WM_SETTEXT,0,(LPARAM)buffer);
 		SetStartStop(SHOWSTART);
 		return dwDuration;
 	}

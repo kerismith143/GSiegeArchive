@@ -1,30 +1,59 @@
 #include "includes.h"
 
-HWND hCatInstructions;
+HWND hMinStatic, hMaxStatic, hOffsetStatic, hRechargeStatic;
 
 int CatapultShowElements()
 {
-	ShowWindow(hCatInstructions, GlobalSettings.nCmdShow);
-	ShowWindow(g_hCatSliderBar, GlobalSettings.nCmdShow);
-	ShowWindow(g_hCatSliderValue, GlobalSettings.nCmdShow);
-	ShowWindow(g_hCatStartButton, GlobalSettings.nCmdShow);
-	ShowWindow(g_hCatDurationBox, GlobalSettings.nCmdShow);
+	if ( UserSettings.EnableAdv ) ShowWindow(GlobalSettings.hCatMinEdit, GlobalSettings.nCmdShow);
+	else ShowWindow(GlobalSettings.hCatMinEdit, SW_HIDE);
+	if ( UserSettings.EnableAdv ) ShowWindow(hMinStatic, GlobalSettings.nCmdShow);
+	else ShowWindow(hMinStatic, SW_HIDE);
+	UpdateWindow(GlobalSettings.hCatMinEdit);
+	UpdateWindow(hMinStatic);
 
-	UpdateWindow(hCatInstructions);
-	UpdateWindow(g_hCatSliderBar);
-	UpdateWindow(g_hCatSliderValue);
-	UpdateWindow(g_hCatStartButton);
-	UpdateWindow(g_hCatDurationBox);
+	if ( UserSettings.EnableAdv ) ShowWindow(GlobalSettings.hCatMaxEdit, GlobalSettings.nCmdShow);
+	else ShowWindow(GlobalSettings.hCatMaxEdit, SW_HIDE);
+	if ( UserSettings.EnableAdv ) ShowWindow(hMaxStatic, GlobalSettings.nCmdShow);
+	else ShowWindow(hMaxStatic, SW_HIDE);
+	UpdateWindow(GlobalSettings.hCatMaxEdit);
+	UpdateWindow(hMaxStatic);
+
+	if ( UserSettings.EnableAdv ) ShowWindow(GlobalSettings.hCatRecharge, GlobalSettings.nCmdShow);
+	else ShowWindow(GlobalSettings.hCatRecharge, SW_HIDE);
+	if ( UserSettings.EnableAdv ) ShowWindow(hRechargeStatic, GlobalSettings.nCmdShow);
+	else ShowWindow(hRechargeStatic, SW_HIDE);
+	UpdateWindow(GlobalSettings.hCatRecharge);
+	UpdateWindow(hRechargeStatic);
+
+	ShowWindow(GlobalSettings.hCatSliderBar, GlobalSettings.nCmdShow);
+	UpdateWindow(GlobalSettings.hCatSliderBar);
+
+	ShowWindow(GlobalSettings.hCatSliderValue, GlobalSettings.nCmdShow);
+	UpdateWindow(GlobalSettings.hCatSliderValue);
+
+	ShowWindow(GlobalSettings.hCatStartButton, GlobalSettings.nCmdShow);
+	UpdateWindow(GlobalSettings.hCatStartButton);
+
+	ShowWindow(GlobalSettings.hCatDurationBox, GlobalSettings.nCmdShow);
+	UpdateWindow(GlobalSettings.hCatDurationBox);
+
+	InvalidateRect(GlobalSettings.hMainWindow, NULL, FALSE);
 	return 1;
 }
 
 int CatapultHideElements()
 {
-	ShowWindow(hCatInstructions, SW_HIDE);
-	ShowWindow(g_hCatSliderBar, SW_HIDE);
-	ShowWindow(g_hCatSliderValue, SW_HIDE);
-	ShowWindow(g_hCatStartButton, SW_HIDE);
-	ShowWindow(g_hCatDurationBox, SW_HIDE);
+	ShowWindow(GlobalSettings.hCatMinEdit, SW_HIDE);
+	ShowWindow(hMinStatic, SW_HIDE);
+	ShowWindow(GlobalSettings.hCatMaxEdit, SW_HIDE);
+	ShowWindow(hMaxStatic, SW_HIDE);
+	ShowWindow(GlobalSettings.hCatRecharge, SW_HIDE);
+	ShowWindow(hRechargeStatic, SW_HIDE);
+	ShowWindow(GlobalSettings.hCatSliderBar, SW_HIDE);
+	ShowWindow(GlobalSettings.hCatSliderValue, SW_HIDE);
+	ShowWindow(GlobalSettings.hCatStartButton, SW_HIDE);
+	ShowWindow(GlobalSettings.hCatDurationBox, SW_HIDE);
+	InvalidateRect(GlobalSettings.hMainWindow, NULL, FALSE);
 	return 1;
 }
 
@@ -43,6 +72,7 @@ void CatapultToggleElements()
 	SendMessage(GlobalSettings.hSiegeTab[0], WM_SETFONT, (WPARAM)GlobalSettings.hFont, 0); // Flame Ram
 	SendMessage(GlobalSettings.hSiegeTab[1], WM_SETFONT, (WPARAM)GlobalSettings.hBoldFont, 0); // Catapult
 	SendMessage(GlobalSettings.hSiegeTab[2], WM_SETFONT, (WPARAM)GlobalSettings.hFont, 0); // Trebuchet
+	GlobalSettings.SelectedTab = GlobalSettings.hSiegeTab[1];
 	for ( n = 0; n < MAXTABS; n++ )
 		InvalidateRect(GlobalSettings.hSiegeTab[n], NULL, TRUE);
 }
@@ -83,7 +113,7 @@ void CatStartBot()
 
 void CatapultCheckState(HWND hWnd)
 {
-	if ( hWnd == g_hCatStartButton )
+	if ( hWnd == GlobalSettings.hCatStartButton )
 		CatStartBot();
 }
 
@@ -91,120 +121,153 @@ int CatapultFormBuilder()
 {
 	char buffer[32];
 
-	int nCpadding; // Padding between elements
-	int nCIBx, nCIBy, nCIBwidth, nCIBheight; // Information static position
+	int nPadding; // Padding between elements
+	//int nCIBx, nCIBy, nCIBwidth, nCIBheight; // Information static position
+	int nRangeY, nRangeWidth, nRangeHeight, nRangeStaticY, nRangeStaticWidth; // Range edit and static
+	int nRechargeY, nRechargeWidth, nRechargeHeight, nRechargeStaticX, nRechargeStaticY, nRechargeStaticWidth;
+	int nMinX, nSMinX; // Minimum range edit box
+	int nMaxX, nSMaxX; // Maximum range edit box
 	int nCSCBx, nCSCBy, nCSCBwidth, nCSCBheight; // Scrollbar position
 	int nCVRx, nCVRy, nCVRwidth, nCVRheight; // Value static position
 	int nCSBx, nCSBwidth, nCSBheight; // Start button position
 	int nCDBx, nCDBy, nCDBwidth, nCDBheight; // Duration static position
 
-	nCpadding = 20;
+	nPadding = 20;
 
-	// Instruction position
-	nCIBx = nCpadding;
-	nCIBy = DEFBUT_HEIGHT + nCpadding;
-	nCIBwidth = UserSettings.ClientWidth - (nCpadding * 2);
-	nCIBheight = 90;
+	// Range Edits
+	nRangeY = DEFBUT_HEIGHT + nPadding;
+	nRangeWidth = nPadding * 2;
+	nRangeHeight = TAB_CHAT_HEIGHT ? TAB_CHAT_HEIGHT : TAB_STATIC_HEIGHT;
+	nRangeStaticY = nRangeY + 2;
+	nRangeStaticWidth = 60;
+
+	nMinX = nPadding;
+	nSMinX = nMinX + nRangeWidth + 5;
+
+	nMaxX = nSMinX + nRangeStaticWidth + nPadding;
+	nSMaxX = nMaxX + nRangeWidth + 5;
 
 	// Scroll Bar position
-	nCSCBx = nCpadding;
-	nCSCBy = DEFBUT_HEIGHT + nCIBy + nCIBheight;
-	nCSCBwidth = UserSettings.ClientWidth - (nCpadding * 7);
-	nCSCBheight = (nCpadding / 2);
+	nCSCBx = nPadding;
+	nCSCBy = (nPadding / 2) + nRangeY + nRangeHeight;
+	nCSCBwidth = UserSettings.ClientWidth - (nPadding * 7);
+	nCSCBheight = (nPadding / 2);
+
+	// Recharge Edit
+	nRechargeY = (nPadding / 2) + nCSCBy + nCSCBheight;
+	nRechargeWidth = nPadding *2;
+	nRechargeHeight = TAB_CHAT_HEIGHT ? TAB_CHAT_HEIGHT : TAB_STATIC_HEIGHT;
+	nRechargeStaticX = nPadding + nRechargeWidth + 5;
+	nRechargeStaticY = nRechargeY + 2;
+	nRechargeStaticWidth = 60;
 
 	// Value Readout position
-	nCVRx = nCSCBx + nCSCBwidth + (nCpadding / 2);
+	nCVRx = nCSCBx + nCSCBwidth + (nPadding / 2);
 	nCVRy = nCSCBy;
-	nCVRwidth = nCpadding * 5;
-	nCVRheight = nCpadding;
+	nCVRwidth = nPadding * 5;
+	nCVRheight = nPadding;
 
 	// Start button position
 	nCSBwidth = DEFBUT_WIDTH;
 	nCSBheight = DEFBUT_HEIGHT;
-	nCSBx = (UserSettings.ClientWidth - nCpadding) - DEFBUT_WIDTH;
-	g_nSBy = (UserSettings.ClientHeight - nCpadding) - DEFBUT_HEIGHT - TAB_CHAT_HEIGHT;
+	nCSBx = (UserSettings.ClientWidth - nPadding) - DEFBUT_WIDTH;
+	g_nSBy = (UserSettings.ClientHeight - nPadding) - DEFBUT_HEIGHT - TAB_CHAT_HEIGHT;
 
 	// Duration timer position
-	nCDBx = nCpadding;
-	nCDBy = (UserSettings.ClientHeight - nCpadding) - abs(nCpadding / 2) - TAB_CHAT_HEIGHT;
-	nCDBwidth = UserSettings.ClientWidth - (nCpadding * 2) - DEFBUT_WIDTH;
-	nCDBheight = nCpadding;
+	nCDBx = nPadding;
+	nCDBy = (UserSettings.ClientHeight - nPadding) - abs(nPadding / 2) - TAB_CHAT_HEIGHT;
+	nCDBwidth = UserSettings.ClientWidth - (nPadding * 2) - DEFBUT_WIDTH;
+	nCDBheight = nPadding;
 
-	// Instructions
-	hCatInstructions = CreateWindow(
-		TEXT("static"), "1. Move the slider bar to the desired range (seconds to hold the fire button).\n\n" \
-		                "2. Use the left and right arrows to make precision changes to the range as needed.\n\n" \
-					    "3. Press Start button on this program.",
-		WS_CHILD | WS_VISIBLE | SS_EDITCONTROL,
-		nCIBx, nCIBy, nCIBwidth, nCIBheight,
+	// Minimum range edit box
+	memset(buffer, 0, sizeof(buffer));
+	_snprintf(buffer, sizeof(buffer)-1, "%lu", UserSettings.CatMin);
+	GlobalSettings.hCatMinEdit = CreateWindow(
+		TEXT("edit"), NULL,
+		WS_CHILDWINDOW | ES_RIGHT | WS_BORDER | ES_AUTOHSCROLL,
+		nMinX, nRangeY, nRangeWidth, nRangeHeight,
 		GlobalSettings.hMainWindow, NULL, GlobalSettings.hInstance, NULL);
+	hMinStatic = CreateWindow(
+		TEXT("static"), "Minimum",
+		WS_CHILD | SS_EDITCONTROL,
+		nSMinX, nRangeStaticY, nRangeStaticWidth, nRangeHeight,
+		GlobalSettings.hMainWindow, NULL, GlobalSettings.hInstance, NULL);
+	SendMessage(GlobalSettings.hCatMinEdit, EM_SETLIMITTEXT, (WPARAM)MAXRNG, 0);
+	SendMessage(GlobalSettings.hCatMinEdit, WM_SETFONT, (WPARAM)GlobalSettings.hFont, 0);
+	SendMessage(GlobalSettings.hCatMinEdit, WM_SETTEXT, 0, (LPARAM)buffer);
+	SendMessage(hMinStatic, WM_SETFONT, (WPARAM)GlobalSettings.hFont, 0);
 
-	if ( hCatInstructions == NULL )
-	{
-		MessageBox(NULL, "Failed to create hCatInstructions.", "Error", MB_ICONEXCLAMATION | MB_OK);
-		return 0;
-	}
-	SendMessage(hCatInstructions, WM_SETFONT, (WPARAM)GlobalSettings.hFont, 0);
+	// Maximum range edit box
+	memset(buffer, 0, sizeof(buffer));
+	_snprintf(buffer, sizeof(buffer)-1, "%lu", UserSettings.CatMax);
+	GlobalSettings.hCatMaxEdit = CreateWindow(
+		TEXT("edit"), NULL,
+		WS_CHILDWINDOW | WS_VISIBLE | ES_RIGHT | WS_BORDER | ES_AUTOHSCROLL,
+		nMaxX, nRangeY, nRangeWidth, nRangeHeight,
+		GlobalSettings.hMainWindow, NULL, GlobalSettings.hInstance, NULL);
+	hMaxStatic = CreateWindow(
+		TEXT("static"), "Maximum",
+		WS_CHILD | SS_EDITCONTROL,
+		nSMaxX, nRangeStaticY, nRangeStaticWidth, nRangeHeight,
+		GlobalSettings.hMainWindow, NULL, GlobalSettings.hInstance, NULL);
+	SendMessage(GlobalSettings.hCatMaxEdit, EM_SETLIMITTEXT, (WPARAM)MAXRNG, 0);
+	SendMessage(GlobalSettings.hCatMaxEdit, WM_SETFONT, (WPARAM)GlobalSettings.hFont, 0);
+	SendMessage(GlobalSettings.hCatMaxEdit, WM_SETTEXT, 0, (LPARAM)buffer);
+	SendMessage(hMaxStatic, WM_SETFONT, (WPARAM)GlobalSettings.hFont, 0);
 
 	// Scroll bar
-	g_hCatSliderBar = CreateWindow(
+	GlobalSettings.hCatSliderBar = CreateWindow(
 		TEXT("scrollbar"), NULL,
 		WS_CHILD | WS_VISIBLE | SBS_HORZ,
 		nCSCBx, nCSCBy, nCSCBwidth, nCSCBheight,
 		GlobalSettings.hMainWindow, NULL, GlobalSettings.hInstance, NULL);
-
-	if ( g_hCatSliderBar == NULL )
-	{
-		MessageBox(NULL, "Failed to create g_hCatSliderBar.", "Error", MB_ICONEXCLAMATION | MB_OK);
-		return 0;
-	}
-	SetScrollRange(g_hCatSliderBar, SB_CTL, CATMINRNG, CATMAXRNG, FALSE);
-	SetScrollPos(g_hCatSliderBar, SB_CTL, UserSettings.CatRange, FALSE);
+	SetScrollRange(GlobalSettings.hCatSliderBar, SB_CTL, UserSettings.CatMin, UserSettings.CatMax, FALSE);
+	SetScrollPos(GlobalSettings.hCatSliderBar, SB_CTL, UserSettings.CatRange, FALSE);
 
 	// Value readout
-	g_hCatSliderValue = CreateWindow(
+	GlobalSettings.hCatSliderValue = CreateWindow(
 		TEXT("static"), "Range: 0.00",
 		WS_CHILD | WS_VISIBLE | SS_EDITCONTROL,
 		nCVRx, nCVRy, nCVRwidth, nCVRheight,
 		GlobalSettings.hMainWindow, NULL, GlobalSettings.hInstance, NULL);
-
-	if ( g_hCatSliderValue == NULL )
-	{
-		MessageBox(NULL, "Failed to create g_hCatSliderValue.", "Error", MB_ICONEXCLAMATION | MB_OK);
-		return 0;
-	}
 	memset(buffer, 0, sizeof(buffer));
-	_snprintf(buffer, sizeof(buffer)-1, "Range: %.2f", (((float)UserSettings.CatRange / (float)CATMAXRNG) * 100));
-	SendMessage(g_hCatSliderValue, WM_SETFONT, (WPARAM)GlobalSettings.hFont, 0);
-	SendMessage(g_hCatSliderValue, WM_SETTEXT, 0, (LPARAM)buffer);
+	_snprintf(buffer, sizeof(buffer)-1, "Range: %.2f", (((float)(UserSettings.CatRange - UserSettings.CatMin) / (float)(UserSettings.CatMax - UserSettings.CatMin)) * 100) );
+	SendMessage(GlobalSettings.hCatSliderValue, WM_SETFONT, (WPARAM)GlobalSettings.hFont, 0);
+	SendMessage(GlobalSettings.hCatSliderValue, WM_SETTEXT, 0, (LPARAM)buffer);
+
+	// Recharge edit box
+	memset(buffer, 0, sizeof(buffer));
+	_snprintf(buffer, sizeof(buffer)-1, "%lu", UserSettings.CatRecharge);
+	GlobalSettings.hCatRecharge = CreateWindow(
+		TEXT("edit"), NULL,
+		WS_CHILDWINDOW | ES_RIGHT | WS_BORDER | ES_AUTOHSCROLL,
+		nPadding, nRechargeY, nRechargeWidth, nRechargeHeight,
+		GlobalSettings.hMainWindow, NULL, GlobalSettings.hInstance, NULL);
+	hRechargeStatic = CreateWindow(
+		TEXT("static"), "Recharge",
+		WS_CHILD | SS_EDITCONTROL,
+		nRechargeStaticX, nRechargeStaticY, nRechargeStaticWidth, nRangeHeight,
+		GlobalSettings.hMainWindow, NULL, GlobalSettings.hInstance, NULL);
+	SendMessage(GlobalSettings.hCatRecharge, EM_SETLIMITTEXT, (WPARAM)MAXRNG, 0);
+	SendMessage(GlobalSettings.hCatRecharge, WM_SETFONT, (WPARAM)GlobalSettings.hFont, 0);
+	SendMessage(GlobalSettings.hCatRecharge, WM_SETTEXT, 0, (LPARAM)buffer);
+	SendMessage(hRechargeStatic, WM_SETFONT, (WPARAM)GlobalSettings.hFont, 0);
 
 	// Start button
-	g_hCatStartButton = CreateWindow(
+	GlobalSettings.hCatStartButton = CreateWindow(
 		TEXT("button"), "Start",
 		WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
 		nCSBx, g_nSBy, nCSBwidth, nCSBheight,
 		GlobalSettings.hMainWindow, NULL, GlobalSettings.hInstance, NULL);
-
-	if( g_hCatStartButton == NULL )
-	{
-		MessageBox(NULL, "Failed to create g_hCatStartButton.", "Error", MB_ICONEXCLAMATION | MB_OK);
-		return 0;
-	}
-	SendMessage(g_hCatStartButton, WM_SETFONT, (WPARAM)GlobalSettings.hFont, 0);
+	SendMessage(GlobalSettings.hCatStartButton, WM_SETFONT, (WPARAM)GlobalSettings.hFont, 0);
 
 	// Duration box
-	g_hCatDurationBox = CreateWindow(
+	GlobalSettings.hCatDurationBox = CreateWindow(
 		TEXT("static"), "Runtime: 0.00s",
 		WS_CHILD | WS_VISIBLE | SS_EDITCONTROL,
 		nCDBx, nCDBy, nCDBwidth, nCDBheight,
 		GlobalSettings.hMainWindow, NULL, GlobalSettings.hInstance, NULL);
-
-	if ( g_hCatDurationBox == NULL )
-	{
-		MessageBox(NULL, "Failed to create g_hCatDurationBox.", "Error", MB_ICONEXCLAMATION | MB_OK);
-		return 0;
-	}
-	SendMessage(g_hCatDurationBox, WM_SETFONT, (WPARAM)GlobalSettings.hFont, 0);
+	SendMessage(GlobalSettings.hCatDurationBox, WM_SETFONT, (WPARAM)GlobalSettings.hFont, 0);
 
 	return 1;
 }

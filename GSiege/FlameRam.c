@@ -1,27 +1,37 @@
 #include "includes.h"
 
-HWND hRamInstructions;
-HWND hRamMasteryCheckbox;
+HWND hRechargeStatic;
 
 int FlameRamHideElements()
 {
-	ShowWindow(g_hRamDurationBox, SW_HIDE);
-	ShowWindow(g_hRamStartButton, SW_HIDE);
-	ShowWindow(hRamMasteryCheckbox, SW_HIDE);
-	ShowWindow(hRamInstructions, SW_HIDE);
+	ShowWindow(GlobalSettings.hRamDurationBox, SW_HIDE);
+	ShowWindow(GlobalSettings.hRamStartButton, SW_HIDE);
+	ShowWindow(GlobalSettings.hRamMasteryCheckbox, SW_HIDE);
+	ShowWindow(GlobalSettings.hRamRecharge, SW_HIDE);
+	ShowWindow(hRechargeStatic, SW_HIDE);
+	InvalidateRect(GlobalSettings.hMainWindow, NULL, FALSE);
 	return 1;
 }
 
 int FlameRamShowElements()
 {
-	ShowWindow(g_hRamDurationBox, GlobalSettings.nCmdShow);
-	ShowWindow(g_hRamStartButton, GlobalSettings.nCmdShow);
-	ShowWindow(hRamMasteryCheckbox, GlobalSettings.nCmdShow);
-	ShowWindow(hRamInstructions, GlobalSettings.nCmdShow);
-	UpdateWindow(g_hRamDurationBox);
-	UpdateWindow(g_hRamStartButton);
-	UpdateWindow(hRamMasteryCheckbox);
-	UpdateWindow(hRamInstructions);
+	if ( UserSettings.EnableAdv ) ShowWindow(GlobalSettings.hRamRecharge, GlobalSettings.nCmdShow);
+	else ShowWindow(GlobalSettings.hRamRecharge, SW_HIDE);
+	if ( UserSettings.EnableAdv ) ShowWindow(hRechargeStatic, GlobalSettings.nCmdShow);
+	else ShowWindow(hRechargeStatic, SW_HIDE);
+	UpdateWindow(GlobalSettings.hRamRecharge);
+	UpdateWindow(hRechargeStatic);
+
+	ShowWindow(GlobalSettings.hRamDurationBox, GlobalSettings.nCmdShow);
+	UpdateWindow(GlobalSettings.hRamDurationBox);
+
+	ShowWindow(GlobalSettings.hRamStartButton, GlobalSettings.nCmdShow);
+	UpdateWindow(GlobalSettings.hRamStartButton);
+
+	ShowWindow(GlobalSettings.hRamMasteryCheckbox, GlobalSettings.nCmdShow);
+	UpdateWindow(GlobalSettings.hRamMasteryCheckbox);
+
+	InvalidateRect(GlobalSettings.hMainWindow, NULL, FALSE);
 	return GlobalSettings.nCmdShow;
 }
 
@@ -40,6 +50,7 @@ void FlameRamToggleElements()
 	SendMessage(GlobalSettings.hSiegeTab[0], WM_SETFONT, (WPARAM)GlobalSettings.hBoldFont, 0); // Flame Ram
 	SendMessage(GlobalSettings.hSiegeTab[1], WM_SETFONT, (WPARAM)GlobalSettings.hFont, 0); // Catapult
 	SendMessage(GlobalSettings.hSiegeTab[2], WM_SETFONT, (WPARAM)GlobalSettings.hFont, 0); // Trebuchet
+	GlobalSettings.SelectedTab = GlobalSettings.hSiegeTab[0];
 	for ( n = 0; n < MAXTABS; n++ )
 		InvalidateRect(GlobalSettings.hSiegeTab[n], NULL, TRUE);
 }
@@ -47,19 +58,27 @@ void FlameRamToggleElements()
 void FlameRamSetMastery()
 {
 	int nState;
+	char buffer[32];
 
-	nState = SendMessage(hRamMasteryCheckbox, BM_GETCHECK, 0, 0);
+	memset(buffer, 0, sizeof(buffer));
+	nState = SendMessage(GlobalSettings.hRamMasteryCheckbox, BM_GETCHECK, 0, 0);
 	switch ( nState )
 	{
 		case BST_UNCHECKED:
 			UserSettings.RamMastery = 0;
+			_snprintf(buffer, sizeof(buffer)-1, "%lu", UserSettings.RamNoMastRecharge);
+			SendMessage(GlobalSettings.hRamRecharge, WM_SETTEXT, 0, (LPARAM)buffer);
 			break;
 		case BST_CHECKED:
 			UserSettings.RamMastery = 1;
+			_snprintf(buffer, sizeof(buffer)-1, "%lu", UserSettings.RamMastRecharge);
+			SendMessage(GlobalSettings.hRamRecharge, WM_SETTEXT, 0, (LPARAM)buffer);
 			break;
 		default:
 			UserSettings.RamMastery = 0;
-			SendMessage(hRamMasteryCheckbox, BM_SETCHECK, (WPARAM)BST_UNCHECKED, 0);
+			_snprintf(buffer, sizeof(buffer)-1, "%lu", UserSettings.RamNoMastRecharge);
+			SendMessage(GlobalSettings.hRamRecharge, WM_SETTEXT, 0, (LPARAM)buffer);
+			SendMessage(GlobalSettings.hRamMasteryCheckbox, BM_SETCHECK, (WPARAM)BST_UNCHECKED, 0);
 			break;
 	}
 }
@@ -103,105 +122,96 @@ void FlameRamStartBot()
 
 void FlameRamCheckState(HWND hWnd)
 {
-	if ( hWnd == hRamMasteryCheckbox )
+	if ( hWnd == GlobalSettings.hRamMasteryCheckbox )
 		FlameRamSetMastery();
-	else if ( hWnd == g_hRamStartButton )
+	else if ( hWnd == GlobalSettings.hRamStartButton )
 		FlameRamStartBot();
 }
 
 int FlameRamFormBuilder()
 {
-	int nFRpadding; // Padding between elements
-	int nFRIBx, nFRIBy, nFRIBwidth, nFRIBheight; // Information static position
-	int nFRCBx, nFRCBy, nFRCBwidth, nFRCBheight; // Checkbox button position
+	char buffer[32];
+	int nPadding; // Padding between elements
+	int nMasteryCheckY, nMasteryCheckWidth, nMasteryCheckHeight; // Checkbox button position
+	int nRechargeY, nRechargeWidth, nRechargeHeight, nOffsetY, nOffsetHeight;
+	int nRechargeStaticX, nRechargeStaticY, nRechargeStaticWidth;
 	int nFRSBx, nFRSBwidth, nFRSBheight; // Start button position
 	int nFRDBx, nFRDBy, nFRDBwidth, nFRDBheight; // Duration static position
 
-	nFRpadding = 20;
-
-	// Instruction position
-	nFRIBx = nFRpadding;
-	nFRIBy = DEFBUT_HEIGHT + nFRpadding;
-	nFRIBwidth = UserSettings.ClientWidth - (nFRpadding * 2);
-	nFRIBheight = 70;
+	nPadding = 20;
 
 	// Mastery checkbox position
-	nFRCBx = nFRpadding;
-	nFRCBy = DEFBUT_HEIGHT + nFRIBy + nFRIBheight;
-	nFRCBwidth = UserSettings.ClientWidth - (nFRpadding * 2);
-	nFRCBheight = nFRpadding;
+	nMasteryCheckY = DEFBUT_HEIGHT + nPadding;
+	nMasteryCheckWidth = UserSettings.ClientWidth - (nPadding * 2);
+	nMasteryCheckHeight = nPadding;
+
+	nOffsetY = (nPadding / 2) + nMasteryCheckY + (TAB_CHAT_HEIGHT ? TAB_CHAT_HEIGHT : TAB_STATIC_HEIGHT);
+	nOffsetHeight = (nPadding / 2);
+
+	// Recharge Edit
+	nRechargeY = (nPadding / 2) + nOffsetY + nOffsetHeight;
+	nRechargeWidth = nPadding *2;
+	nRechargeHeight = TAB_CHAT_HEIGHT ? TAB_CHAT_HEIGHT : TAB_STATIC_HEIGHT;
+	nRechargeStaticX = nPadding + nRechargeWidth + 5;
+	nRechargeStaticY = nRechargeY + 2;
+	nRechargeStaticWidth = 60;
 
 	// Start button position
 	nFRSBwidth = DEFBUT_WIDTH;
 	nFRSBheight = DEFBUT_HEIGHT;
-	nFRSBx = (UserSettings.ClientWidth - nFRpadding) - DEFBUT_WIDTH;
-	g_nSBy = (UserSettings.ClientHeight - nFRpadding) - DEFBUT_HEIGHT - TAB_CHAT_HEIGHT;
+	nFRSBx = (UserSettings.ClientWidth - nPadding) - DEFBUT_WIDTH;
+	g_nSBy = (UserSettings.ClientHeight - nPadding) - DEFBUT_HEIGHT - TAB_CHAT_HEIGHT;
 
 	// Duration timer position
-	nFRDBx = nFRpadding;
-	nFRDBy = (UserSettings.ClientHeight - nFRpadding) - abs(nFRpadding / 2) - TAB_CHAT_HEIGHT;
-	nFRDBwidth = UserSettings.ClientWidth - (nFRpadding * 2) - DEFBUT_WIDTH;
-	nFRDBheight = nFRpadding;
-
-	// Instructions
-	hRamInstructions = CreateWindow(
-		TEXT("static"), "1. Select whether you have Flame Ram Mastery III or higher.\n\n" \
-		                "2. Select your target in-game.\n\n" \
-					    "3. Press Start button on this program.",
-		WS_CHILD | WS_VISIBLE | SS_EDITCONTROL,
-		nFRIBx, nFRIBy, nFRIBwidth, nFRIBheight,
-		GlobalSettings.hMainWindow, NULL, GlobalSettings.hInstance, NULL);
-
-	if ( hRamInstructions == NULL )
-	{
-		MessageBox(NULL, "Failed to create hRamInstructions.", "Error", MB_ICONEXCLAMATION | MB_OK);
-		return 0;
-	}
-	SendMessage(hRamInstructions, WM_SETFONT, (WPARAM)GlobalSettings.hFont, 0);
+	nFRDBx = nPadding;
+	nFRDBy = (UserSettings.ClientHeight - nPadding) - abs(nPadding / 2) - TAB_CHAT_HEIGHT;
+	nFRDBwidth = UserSettings.ClientWidth - (nPadding * 2) - DEFBUT_WIDTH;
+	nFRDBheight = nPadding;
 
 	// Mastery checkbox
-	hRamMasteryCheckbox = CreateWindow(
+	GlobalSettings.hRamMasteryCheckbox = CreateWindow(
 		TEXT("button"), "Flame Ram Mastery",
 		WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX,
-		nFRCBx, nFRCBy, nFRCBwidth, nFRCBheight,
+		nPadding, nMasteryCheckY, nMasteryCheckWidth, nMasteryCheckHeight,
 		GlobalSettings.hMainWindow, NULL, GlobalSettings.hInstance, NULL);
-
-	if( hRamMasteryCheckbox == NULL )
-	{
-		MessageBox(NULL, "Failed to create hRamMasteryCheckbox.", "Error", MB_ICONEXCLAMATION | MB_OK);
-		return 0;
-	}
-	SendMessage(hRamMasteryCheckbox, WM_SETFONT, (WPARAM)GlobalSettings.hFont, 0);
+	SendMessage(GlobalSettings.hRamMasteryCheckbox, WM_SETFONT, (WPARAM)GlobalSettings.hFont, 0);
 	if ( UserSettings.RamMastery == 1 )
-		SendMessage(hRamMasteryCheckbox, BM_SETCHECK, (WPARAM)BST_CHECKED, 0);
+		SendMessage(GlobalSettings.hRamMasteryCheckbox, BM_SETCHECK, (WPARAM)BST_CHECKED, 0);
+
+	// Recharge edit box
+	memset(buffer, 0, sizeof(buffer));
+	_snprintf(buffer, sizeof(buffer)-1, "%lu",
+		(UserSettings.RamMastery ? UserSettings.RamMastRecharge : UserSettings.RamNoMastRecharge));
+	GlobalSettings.hRamRecharge = CreateWindow(
+		TEXT("edit"), NULL,
+		WS_CHILDWINDOW | ES_RIGHT | WS_BORDER | ES_AUTOHSCROLL,
+		nPadding, nRechargeY, nRechargeWidth, nRechargeHeight,
+		GlobalSettings.hMainWindow, NULL, GlobalSettings.hInstance, NULL);
+	hRechargeStatic = CreateWindow(
+		TEXT("static"), "Recharge",
+		WS_CHILD | SS_EDITCONTROL,
+		nRechargeStaticX, nRechargeStaticY, nRechargeStaticWidth, nRechargeHeight,
+		GlobalSettings.hMainWindow, NULL, GlobalSettings.hInstance, NULL);
+	SendMessage(GlobalSettings.hRamRecharge, EM_SETLIMITTEXT, (WPARAM)MAXRNG, 0);
+	SendMessage(GlobalSettings.hRamRecharge, WM_SETFONT, (WPARAM)GlobalSettings.hFont, 0);
+	SendMessage(GlobalSettings.hRamRecharge, WM_SETTEXT, 0, (LPARAM)buffer);
+	SendMessage(hRechargeStatic, WM_SETFONT, (WPARAM)GlobalSettings.hFont, 0);
 
 	// Start button
-	g_hRamStartButton = CreateWindow(
+	GlobalSettings.hRamStartButton = CreateWindow(
 		TEXT("button"), "Start",
 		WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
 		nFRSBx, g_nSBy, nFRSBwidth, nFRSBheight,
 		GlobalSettings.hMainWindow, NULL, GlobalSettings.hInstance, NULL);
-
-	if( g_hRamStartButton == NULL )
-	{
-		MessageBox(NULL, "Failed to create g_hRamStartButton.", "Error", MB_ICONEXCLAMATION | MB_OK);
-		return 0;
-	}
-	SendMessage(g_hRamStartButton, WM_SETFONT, (WPARAM)GlobalSettings.hFont, 0);
+	SendMessage(GlobalSettings.hRamStartButton, WM_SETFONT, (WPARAM)GlobalSettings.hFont, 0);
 
 	// Duration box
-	g_hRamDurationBox = CreateWindow(
+	GlobalSettings.hRamDurationBox = CreateWindow(
 		TEXT("static"), "Runtime: 0.00s",
 		WS_CHILD | WS_VISIBLE | SS_EDITCONTROL,
 		nFRDBx, nFRDBy, nFRDBwidth, nFRDBheight,
 		GlobalSettings.hMainWindow, NULL, GlobalSettings.hInstance, NULL);
-
-	if ( g_hRamDurationBox == NULL )
-	{
-		MessageBox(NULL, "Failed to create g_hRamDurationBox.", "Error", MB_ICONEXCLAMATION | MB_OK);
-		return 0;
-	}
-	SendMessage(g_hRamDurationBox, WM_SETFONT, (WPARAM)GlobalSettings.hFont, 0);
+	SendMessage(GlobalSettings.hRamDurationBox, WM_SETFONT, (WPARAM)GlobalSettings.hFont, 0);
 
 	return 1;
 }

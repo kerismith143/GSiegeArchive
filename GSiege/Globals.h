@@ -3,30 +3,31 @@
 
 // Guild Wars 2 main window class name
 #define FINDCLASS	"ArenaNet_Dx_Window_Class"
+#define GSIEGE_MAJOR_VERSION	1
+#define GSIEGE_MINOR_VERSION	3
+#define GSIEGE_VERSION_STRING	"GSiege v1.3"
 
 #define SLEEPMIN	50
 
+#define RAMMASTER	3500 // Wait time + offset for Flame Ram with Mastery III or higher
+#define RAMNOMASTER	5500 // Wait time + offset for Flame Ram with Mastery II or lower
+#define CATTREB		5500 // Wait time + offset for Catapult and Trebuchet
+
 // Global Flame Ram handles
-HWND g_hRamStartButton;
-HWND g_hRamDurationBox;
 
 // Trebuchet global window handles
-HWND g_hTrebStartButton;
-HWND g_hTrebDurationBox;
-HWND g_hTrebSliderBar;
-HWND g_hTrebSliderValue;
 
 // Global Catapult tab handles
-HWND g_hCatStartButton;
-HWND g_hCatDurationBox;
-HWND g_hCatSliderBar;
-HWND g_hCatSliderValue;
 
 int g_nSBy;
 
 #define MAXTABS			3 // Maximum number of tabs to display
 #define GSIEGE_DAT		"GSiege.dat" // Name of settings file
 #define MAXTEXT			100 // Maximum number of characters for chat with NULL terminator
+#define MAXRNG			4
+#define RANDOFFSET		5
+#define MAINWIDTH		300
+#define MAINHEIGHT		210
 
 typedef struct tagGLOBALSETTINGS
 {
@@ -42,9 +43,36 @@ typedef struct tagGLOBALSETTINGS
 	HANDLE hThread;
 	char szMenuName;
 	HMENU hMenu;
+
 	HWND hChatWindow;
 	HWND hChatButton;
-	HACCEL AccelTable;
+	HWND hRandomEdit;
+
+	HWND hRamStartButton;
+	HWND hRamDurationBox;
+	HWND hRamRecharge;
+	HWND hRamMasteryCheckbox;
+
+	HWND hTrebStartButton;
+	HWND hTrebDurationBox;
+	HWND hTrebSliderBar;
+	HWND hTrebSliderValue;
+	HWND hTrebMinEdit;
+	HWND hTrebMaxEdit;
+	HWND hTrebRecharge;
+
+	HWND hCatStartButton;
+	HWND hCatDurationBox;
+	HWND hCatSliderBar;
+	HWND hCatSliderValue;
+	HWND hCatMinEdit;
+	HWND hCatMaxEdit;
+	HWND hCatRecharge;
+
+	HWND hOffset;
+	HWND hOffsetStatic;
+
+	HWND SelectedTab;
 } GLOBALSETTINGS, *PGLOBALSETTINGS, *LPGLOBALSETTINGS;
 GLOBALSETTINGS GlobalSettings;
 
@@ -61,10 +89,20 @@ typedef struct tagUSERSETTINGS
 	int ClientWidth;
 	int ClientHeight;
 	unsigned char RamMastery;
+	int RamMastRecharge;
+	int RamNoMastRecharge;
 	int CatRange;
+	int CatMin;
+	int CatMax;
+	int CatRecharge;
 	int TrebRange;
+	int TrebMin;
+	int TrebMax;
+	int TrebRecharge;
+	int Offset;
 	unsigned char OnTop;
 	unsigned char EnableChat;
+	unsigned char EnableAdv;
 } USERSETTINGS, *PUSERSETTINGS, *LPUSERSETTINGS;
 #pragma pack(pop)
 USERSETTINGS UserSettings;
@@ -81,5 +119,6 @@ TIMERPROCPARAMS tpp; // Global thread initialisation type
 DWORD RandOffset(DWORD dwValue, int nUseMilliseconds); // Vary dwValue by 100-500 milliseconds randomly, or 1 to 5 seconds randomly
 void SaveSettings();
 void LoadSettings();
+void ModifyEdits(HWND hWnd);
 
 #endif //__GSIEGE_GLOBALS_H__
