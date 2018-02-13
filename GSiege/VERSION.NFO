@@ -1,0 +1,41 @@
+For the ultimate in laziness, there is now GSiege!
+
+Are you tired of trebbing fortified walls with no mastery and a regular treb?
+Have you been ramming that reinforced gate for what seems to be ages?
+Perhaps your cata range skills are not up to snuff.
+
+I have the answer for you... GSiege!
+Now with more electrolytes!
+
+This tool is designed to run your Flame Rams, Catapults, and Trebuchets
+for you. All you have to do is select your target or range, then start
+the bot. You can modify the range of the trebuchet and catapult on the
+fly, by means of percentages, and flame rams support Tier III mastery
+timing.
+
+The whole program is written in C (C89/ANSI C), using the Win32 API, and
+Visual Studio 2012 compiler. Full source code with VS2012 project files,
+and UPX packed precompiled binary are included.
+
+Total size comes in about 27KB.
+
+Version History:
+----------------------------
+1.0
+- Flame Ram, Catapult, and Trebuchet simple support.
+
+1.1
+- Added menu options for enable/disable topmost and chat while running.
+- Fixed a bug with scrollbar arrows permitting values outside of usable range.
+- Clarified Trebuchet tab can also be used for Mortars.
+
+1.2
+- Fixed an issue with a buffer overflow in the chat portion.
+
+1.3
+- Minor bug fixes on some interface elements and timing.
+- Added ability to edit timing parameters though user interface.
+- Slimmed down the user interface and added Help information.
+
+1.4
+- Changed bot routine to permit updating of Flame Ram recharge rate dynamically.

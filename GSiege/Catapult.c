@@ -102,7 +102,6 @@ void CatStartBot()
 
 		// Build params struct
 		tpp.nType = BOT_CATAPULT;
-		tpp.dwRange = (DWORD)UserSettings.CatRange;
 
 		// Start bot thread and set form elements
 		GlobalSettings.hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&TimerProc, &tpp, 0, &GlobalSettings.dwThreadId); 

@@ -106,12 +106,7 @@ void FlameRamStartBot()
 		// Set bot execution control variable
 		GlobalSettings.BOT_EXECUTE = 1;
 
-		// Build params struct
-		if ( UserSettings.RamMastery )
-			tpp.nType = BOT_RAM_MASTER;
-		else
-			tpp.nType = BOT_RAM_NOMASTER;
-		tpp.dwRange = 0;
+		tpp.nType = BOT_RAM;
 
 		// Start bot thread and set form elements
 		GlobalSettings.hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&TimerProc, &tpp, 0, &GlobalSettings.dwThreadId); 

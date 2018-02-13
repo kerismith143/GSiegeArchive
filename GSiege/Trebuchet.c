@@ -102,7 +102,6 @@ void TrebStartBot()
 
 		// Build params struct
 		tpp.nType = BOT_TREBUCHET;
-		tpp.dwRange = (DWORD)UserSettings.TrebRange;
 
 		// Start bot thread and set form elements
 		GlobalSettings.hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&TimerProc, &tpp, 0, &GlobalSettings.dwThreadId); 

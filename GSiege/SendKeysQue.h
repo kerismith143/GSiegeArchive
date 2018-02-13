@@ -1,7 +1,9 @@
-#ifndef __SENDKEYSQUE_H__
-#define __SENDKEYSQUE_H__
+#ifndef __GSIEGE_SENDKEYSQUE_H__
+#define __GSIEGE_SENDKEYSQUE_H__
 
 #define SKCHARMAX		99
+#define SKDELIMMAX		SKCHARMAX  + 2	// Leading and trailing \n
+#define SKTOTALMAX		SKDELIMMAX + 1	// NULL termination.
 
 #define SK_SUCCESS		 1
 #define SKE_UNKNOWN		 0
@@ -28,4 +30,4 @@ int SendKeysQueAdd(HWND hWnd, char *text);
 DWORD SendKeysQue();
 void SKQueInit();
 
-#endif //__SENDKEYSQUE_H__
+#endif //__GSIEGE_SENDKEYSQUE_H__

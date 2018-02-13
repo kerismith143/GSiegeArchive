@@ -4,8 +4,8 @@
 // Guild Wars 2 main window class name
 #define FINDCLASS	"ArenaNet_Dx_Window_Class"
 #define GSIEGE_MAJOR_VERSION	1
-#define GSIEGE_MINOR_VERSION	3
-#define GSIEGE_VERSION_STRING	"GSiege v1.3"
+#define GSIEGE_MINOR_VERSION	4
+#define GSIEGE_VERSION_STRING	"GSiege v1.4"
 
 #define SLEEPMIN	50
 
@@ -112,7 +112,6 @@ USERSETTINGS UserSettings;
 typedef struct tagTIMERPROCPARAMS
 {
 	int		nType; // Type of thread to initialise
-	DWORD	dwRange; // Range of Catapult and Trebuchet where applicable
 } TIMERPROCPARAMS, *PTIMERPROCPARAMS, *LPTIMERPROCPARAMS;
 TIMERPROCPARAMS tpp; // Global thread initialisation type
 

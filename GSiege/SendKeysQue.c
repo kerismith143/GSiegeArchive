@@ -7,7 +7,7 @@ struct send_que *SKQueInitialise(HWND hWnd, char *text)
 	size_t len;
 
 	len = strlen(text);
-	if ( (len < 1) || (len > (SKCHARMAX + 2)) )
+	if ( (len < 1) || (len > (SKDELIMMAX)) )
 		return NULL;
 
 	lpSendQuePtr = (struct send_que *)malloc(sizeof(struct send_que));
@@ -25,7 +25,7 @@ struct send_que *SKQueAddElement(HWND hWnd, char *text)
 	size_t len;
 
 	len = strlen(text);
-	if ( (len < 1) || (len > (SKCHARMAX + 2)) )
+	if ( (len < 1) || (len > (SKDELIMMAX)) )
 		return NULL;
 
 	if ( lpSendQueHead == NULL )
@@ -165,7 +165,7 @@ int SendKeysQueAdd(HWND hWnd, char *text)
 DWORD SendKeysQue()
 {
 	HWND hWnd = 0;
-	char text[SKCHARMAX+3]; // Handle leading and trailing 0x0A
+	char text[SKTOTALMAX]; // Handle leading and trailing 0x0A
 	size_t len;
 	int nRet;
 	DWORD dwDuration;
@@ -175,7 +175,7 @@ DWORD SendKeysQue()
 
 	len = strlen(lpSendQueHead->Text);
 
-	if ( (len < 1) || (len > (SKCHARMAX + 2)) )
+	if ( (len < 1) || (len > (SKDELIMMAX)) )
 		return ((DWORD)SKE_VALLIMIT);
 
 	memset(text, 0, sizeof(text));

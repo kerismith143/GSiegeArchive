@@ -3,7 +3,7 @@
 #define SKPROCESS	   3 // Amount of buffer entries to process for SendKeysQue()
 
 // Procedure to control Flame Ram bot functionality
-DWORD BotRam(DWORD dwIteration)
+DWORD BotRam()
 {
 	HWND hGuildWars;
 	unsigned int n = 3;
@@ -33,7 +33,7 @@ DWORD BotRam(DWORD dwIteration)
 			dwDuration += SendKeys(hGuildWars, '1', RandOffset(0, MS_ENABLED));
 
 			// Sleep one iteration and increment tick count
-			dwSleep = RandOffset(dwIteration, MS_ENABLED);
+			dwSleep = RandOffset((UserSettings.RamMastery ? UserSettings.RamMastRecharge : UserSettings.RamNoMastRecharge), MS_ENABLED);
 			dwDuration += dwSleep;
 			n++;
 			// Send SKPROCESS lines of text from SendQue
@@ -43,6 +43,9 @@ DWORD BotRam(DWORD dwIteration)
 				if ( (nRet= SendKeysQue()) >= 0 )
 				{
 					dwDuration += nRet;
+					dwSleep -= nRet;
+					if ( dwSleep > 0xFFFFFF ) // rolled over check
+						dwSleep = 0;
 				}
 			}
 			// Wait for iteration
@@ -97,6 +100,9 @@ DWORD BotCT(int nType)
 				if ( (nRet= SendKeysQue()) >= 0 )
 				{
 					dwDuration += nRet;
+					dwSleep -= nRet;
+					if ( dwSleep > 0xFFFFFF ) // rolled over check
+						dwSleep = 0;
 				}
 			}
 
@@ -118,25 +124,16 @@ DWORD TimerProc(LPVOID lpParams)
 	memset(buffer, 0, sizeof(buffer));
 
 	// Execute procedure for Flame Ram with Mastery II or less
-	if ( ptpp->nType == BOT_RAM_NOMASTER )
+	if ( ptpp->nType == BOT_RAM )
 	{
-		dwDuration = BotRam((UserSettings.RamMastery ? UserSettings.RamMastRecharge : UserSettings.RamNoMastRecharge));
+		dwDuration = BotRam();
 		fDuration = (((float)dwDuration) / 1000);
 		_snprintf(buffer, sizeof(buffer)-1, "Run Time: %.2fs", fDuration);
-		SendMessage(GlobalSettings.hRamDurationBox, WM_SETTEXT,0,(LPARAM)buffer);
+		SendMessage(GlobalSettings.hRamDurationBox, WM_SETTEXT, 0, (LPARAM)buffer);
 		SetStartStop(SHOWSTART);
 		return dwDuration;
 	}
-	// Execute procedure for Flame Ram with Mastery III or greater
-	else if ( ptpp->nType == BOT_RAM_MASTER )
-	{
-		dwDuration = BotRam((UserSettings.RamMastery ? UserSettings.RamMastRecharge : UserSettings.RamNoMastRecharge));
-		fDuration = (((float)dwDuration) / 1000);
-		_snprintf(buffer, sizeof(buffer)-1, "Run Time: %.2fs", fDuration);
-		SendMessage(GlobalSettings.hRamDurationBox, WM_SETTEXT,0,(LPARAM)buffer);
-		SetStartStop(SHOWSTART);
-		return dwDuration;
-	}
+
 	// Execute procedure for Catapult and Trebuchet
 	else if ( (ptpp->nType == BOT_CATAPULT) || (ptpp->nType == BOT_TREBUCHET) )
 	{
